@@ -33,7 +33,7 @@ while(n < ms0.length) {
 
 n = 1;
 while(n < ms.length) {
-  if (n !== 1) { n++; continue }
+  //if (n !== 1) { n++; continue }
   console.log('Test: ' + n + ' >>>')
   const m = ms[n].inputMarkdown
   const h = setMarkdownFigureNum(m)

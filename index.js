@@ -105,7 +105,7 @@ const setMarkdownFigureNum = (markdown, option) => {
             continue
           }
           if (lines[i].match(new RegExp(hasFigureImageReg))) {
-            lines[i] = lines[i].replace(new RegExp(hasFigureImageReg), '$1$2' + label(hasMarkLabel, hasFigureImageReg) + counter[mark] + '$3')
+            lines[i] = lines[i].replace(new RegExp(hasFigureImageReg), '$1' + label(hasMarkLabel, hasFigureImageReg) + counter[mark] + '$3')
             hasNextFigureImage = true
           }
           break
@@ -118,7 +118,7 @@ const setMarkdownFigureNum = (markdown, option) => {
             continue
             }
             if (lines[i].match(new RegExp(hasFigureImageReg))) {
-              lines[i] = lines[i].replace(new RegExp(hasFigureImageReg), '$1$2' + label(hasMarkLabel, hasFigureImageReg) + counter[mark] + '$3')
+              lines[i] = lines[i].replace(new RegExp(hasFigureImageReg), '$1' + label(hasMarkLabel, hasFigureImageReg) + counter[mark] + '$3')
             }
             break
           }
