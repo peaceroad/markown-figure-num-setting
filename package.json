@@ -1,7 +1,7 @@
 {
   "name": "@peaceroad/markown-figure-num-setting",
-  "version": "0.1.1",
-  "description": "Set figure number of p7d-markdown-it-p-captions.",
+  "version": "0.1.3",
+  "description": "Set figure number for p7d-markdown-it-p-captions.",
   "type": "module",
   "main": "index.js",
   "scripts": {

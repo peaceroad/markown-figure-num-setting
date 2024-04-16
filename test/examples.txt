@@ -39,7 +39,7 @@
 
 段落。段落。段落。
 
-図2 キャプション
+図3 キャプション
 
 ![](image.jpg)
 
@@ -61,33 +61,132 @@
 段落。段落。段落。
 
 
-[Input]
-段落。段落。段落。
 
+[Input]
 図 キャプション
 
 ![図1](image.jpg)
 
-段落。段落。段落。
+図 キャプション
+
+![図2](image.jpg)
+
+[Output]
+図1 キャプション
+
+![図1](image.jpg)
+
+図2 キャプション
+
+![図2](image.jpg)
+
+
+
+[Input]
+![図1](image.jpg)
 
 図 キャプション
 
 ![図2](image.jpg)
+
+図 キャプション
+[Output]
+![図1](image.jpg)
+
+図1 キャプション
+
+![図2](image.jpg)
+
+図2 キャプション
+
+[Input]
+段落。段落。段落。
+
+```
+図 キャプション
+
+![図1](image.jpg)
+```
+
+```
+Code. Caption
+```
 
 段落。段落。段落。
 
 [Output]
 段落。段落。段落。
 
-図1 キャプション
+```
+図 キャプション
 
 ![図1](image.jpg)
+```
+
+```
+Code. Caption
+```
 
 段落。段落。段落。
 
-図2 キャプション
 
-![図2](image.jpg)
+[Input]
+段落。段落。段落。
+
+Figure. キャプション
+
+![](image.jpg)
 
 段落。段落。段落。
 
+Figure. キャプション
+
+![](image.jpg)
+
+段落。段落。段落。
+
+[Output]
+段落。段落。段落。
+
+Figure 1. キャプション
+
+![Figure 1](image.jpg)
+
+段落。段落。段落。
+
+Figure 2. キャプション
+
+![Figure 2](image.jpg)
+
+段落。段落。段落。
+
+
+
+[Input]
+This line is [Figure][#flag] paragraph.
+
+Figure. A caption.
+
+![](cat.jpg) {#flag}
+
+Figure. A caption.
+
+![](cat.jpg) {#flag2}
+
+A paragraph. [Figure][#flag2] paragraph.
+
+[Output]
+This line is [Figure 1][] paragraph.
+
+Figure 1. A caption.
+
+![Figure 1](cat.jpg) {#figure1}
+
+Figure 2. A caption.
+
+![Figure 2](cat.jpg) {#figure2}
+
+A paragraph. [Figure 2][] paragraph.
+
+[Figure 1]: #figure1
+[Figure 2]: #figure2

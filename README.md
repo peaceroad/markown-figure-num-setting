@@ -70,4 +70,35 @@ setMarkdownFigureNum(markdownCont)
 ![図2](image.jpg)
 
 段落。段落。段落。
+
+
+[Input]
+段落。段落。段落。
+
+Figure. キャプション
+
+![](image.jpg)
+
+段落。段落。段落。
+
+Figure. キャプション
+
+![](image.jpg)
+
+段落。段落。段落。
+
+[Output]
+段落。段落。段落。
+
+Figure1. キャプション
+
+![Figure 1](image.jpg)
+
+段落。段落。段落。
+
+Figure 2. キャプション
+
+![Figure 2](image.jpg)
+
+段落。段落。段落。
 ```
