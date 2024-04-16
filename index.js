@@ -111,47 +111,55 @@ const setMarkdownFigureNum = (markdown, option) => {
 
 
   const setImageAltNumber = (lines, n,  mark, hasMarkLabel, counter) => {
+    let hasPrevFigureImage = false
     let isFigureImage
-    const isFigureImageReg = /^([ \t]*\!\[) *?(.*?([0-9]*)) *?(\]\(.*?\))/
-    let hasPrevCaption
+    const figureImageReg = /^([ \t]*\!\[) *?(.*?([0-9]*)) *?(\]\(.*?\))/
     let i
     i = n - 1
+    //console.log('lines[n]: ' + lines[n])
+    //console.log('CheckPrevLine')
     while (i >= 0) {
       if (/^[ \t]*$/.test(lines[i])) {
         i--
         continue
       }
-      isFigureImage =  lines[i].match(new RegExp(isFigureImageReg))
-      if (isFigureImage) {
-        let j =  i - 1
-        while (j >= 0) {
-          if (/^[ \t]*$/.test(lines[j])) {
-            j--
-            continue
-          }
-          if (lines[j].match(new RegExp(isFigureImageReg[2]))) {
-            hasPrevCaption  = true
-          }
-          if (!hasPrevCaption) {
-            lines[i] = lines[i].replace(new RegExp(isFigureImageReg), '$1' + label(hasMarkLabel, counter[mark], true) + '$4')
-          }
+      isFigureImage =  lines[i].match(new RegExp(figureImageReg))
+      if (!isFigureImage) break
+      //console.log(isFigureImage)
+
+      let j =  i
+      while (j >= 0) {
+        if (/^[ \t]*$/.test(lines[j])) {
+          j--
+          continue
+        }
+        //console.log(isFigureImage[3], (counter.img - 1).toString())
+        if (isFigureImage[3] === (counter.img - 1).toString()) {
+          hasPrevFigureImage = false
           break
         }
+        lines[i] = lines[i].replace(new RegExp(figureImageReg), '$1' + label(hasMarkLabel, counter[mark], true) + '$4')
+        //console.log('ChangePrevLine: ' + lines[i])
+        hasPrevFigureImage = true
+        break
       }
       break
     }
 
-    if (isFigureImage) return
+    if (hasPrevFigureImage) return
 
+    //console.log('CheckNextLine')
     i = n + 1
     while (i < lines.length) {
       if (/^[\t ]*$/.test(lines[i])) {
         i++
         continue
       }
-      isFigureImage =  lines[i].match(new RegExp(isFigureImageReg))
+      isFigureImage =  lines[i].match(new RegExp(figureImageReg))
+      //console.log(isFigureImage)
       if (isFigureImage) {
-        lines[i] = lines[i].replace(new RegExp(isFigureImageReg), '$1' + label(hasMarkLabel, counter[mark], true) + '$4')
+        lines[i] = lines[i].replace(new RegExp(figureImageReg), '$1' + label(hasMarkLabel, counter[mark], true) + '$4')
+        //console.log('ChangeNextLine: ' + lines[i])
       }
       break
     }

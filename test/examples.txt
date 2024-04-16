@@ -161,3 +161,38 @@ Figure 2. キャプション
 段落。段落。段落。
 
 
+[Input]
+図 キャプション
+
+![](image.jpg)
+
+図 キャプション
+
+![](image.jpg)
+
+[Output]
+図1 キャプション
+
+![図1](image.jpg)
+
+図2 キャプション
+
+![図2](image.jpg)
+
+
+[Input]
+![](image.jpg)
+
+図 キャプション
+
+![](image.jpg)
+
+図 キャプション
+[Output]
+![図1](image.jpg)
+
+図1 キャプション
+
+![図2](image.jpg)
+
+図2 キャプション
