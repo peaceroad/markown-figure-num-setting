@@ -203,7 +203,7 @@ const setMarkdownFigureNum = (markdown, option) => {
       //if (hasMarkLabel) console.log(hasMarkLabel)
       if (hasMarkLabel && opt[mark]) {
         counter[mark]++
-        console.log('lines[n]: ' + lines[n])
+        //console.log('lines[n]: ' + lines[n])
         lines[n] = lines[n].replace(new RegExp('^([ \t]*)' + hasMarkLabel[0]), '$1' + label(hasMarkLabel, counter[mark]))
         if (mark === 'img') {
           setImageAltNumber(lines, n, mark, hasMarkLabel, counter)
