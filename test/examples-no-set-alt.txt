@@ -1,0 +1,36 @@
+[Input]
+図 キャプション
+
+![ALT-A](image.jpg)
+
+図 キャプション
+
+![ALT-B](image.jpg)
+
+[Output]
+図1 キャプション
+
+![ALT-A](image.jpg)
+
+図2 キャプション
+
+![ALT-B](image.jpg)
+
+
+[Input]
+図
+
+![ALT-A](image.jpg)
+
+図
+
+![ALT-B](image.jpg)
+
+[Output]
+図1
+
+![ALT-A](image.jpg)
+
+図2
+
+![ALT-B](image.jpg)

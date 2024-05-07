@@ -7,6 +7,8 @@ const setMarkdownFigureNum = (markdown, option) => {
     samp: false,
     blockquote: false,
     slide: false,
+    noSetAlt: false,
+    setImgAlt: false,
   }
   opt["pre-code"] = opt.code
   opt["pre-samp"] = opt.samp
@@ -35,7 +37,8 @@ const setMarkdownFigureNum = (markdown, option) => {
     ')|' +
     '[.](' + markAfterNum + ')(?:' +
       joint + '|(?=[ ]+[^a-z])|$' +
-    ')' +
+    ')|' +
+    '[ 　]*$' +
   ')';
 
   const markAfterJa = '(?:' +
@@ -48,13 +51,14 @@ const setMarkdownFigureNum = (markdown, option) => {
       jointHalfWidth + '(?:(?=[ ]+)|$)|' +
       jointFullWidth + '|' +
       '(?=[ ]+)|$' +
-    ')' +
+    ')|' +
+    '[ 　]*$' +
   ')';
 
   const markReg = {
     //fig(ure)?, illust, photo
     "img": new RegExp('^(?:' +
-      '(?:[fF][iI][gG](?:[uU][rR][eE])?|[iI][lL]{2}[uU][sS][tT]|[pP][hH][oO[tT][oO])'+ markAfterEn + '|' +
+      '(?:[fF][iI][gG](?:[uU][rR][eE])?|[iI][lL]{2}[uU][sS][tT]|[pP][hH][oO][tT][oO])'+ markAfterEn + '|' +
       '(?:図|イラスト|写真)' + markAfterJa +
     ')'),
     //movie, video
@@ -69,7 +73,7 @@ const setMarkdownFigureNum = (markdown, option) => {
     ')'),
     //code(block)?, program
     "pre-code": new RegExp('^(?:' +
-      '(?:[cC][oO][dD][eE](?:[bB][lL][oO][cC][kK])?|[pP][rR][oO][gG][rR][aA][mM]|[aA][lL][gG][oO][rR][iI[tT][hH][mM])'+ markAfterEn + '|' +
+      '(?:[cC][oO][dD][eE](?:[bB][lL][oO][cC][kK])?|[pP][rR][oO][gG][rR][aA][mM]|[aA][lL][gG][oO][rR][iI][tT][hH][mM])'+ markAfterEn + '|' +
       '(?:(?:ソース)?コード|リスト|命令|プログラム|算譜|アルゴリズム|算法)' + markAfterJa +
     ')'),
     //terminal, prompt, command
@@ -92,16 +96,22 @@ const setMarkdownFigureNum = (markdown, option) => {
   const label = (hasMarkLabel, counter, isAlt) => {
 
     let label = hasMarkLabel[0]
+    let LabelIsEn = /[a-zA-Z]/.test(label)
+    let spaceBeforeCounter = ''
+    if (LabelIsEn) {
+      spaceBeforeCounter = ' '
+    }
 
     if (hasMarkLabel[3]) {
       label = hasMarkLabel[0].replace(new RegExp(hasMarkLabel[3] + '$'), '')
     }
     let isLabelLastJoint = label.match(new RegExp('(' + joint +')$'))
+
     if (isLabelLastJoint) {
       if (isAlt) {
-        label = label.replace(new RegExp(joint +'$'), '') + ' ' + counter
+        label = label.replace(new RegExp(joint +'$'), '') + spaceBeforeCounter + counter
       } else {
-        label = label.replace(new RegExp(joint +'$'), '') + ' ' + counter + isLabelLastJoint[1]
+        label = label.replace(new RegExp(joint +'$'), '') + spaceBeforeCounter + counter + isLabelLastJoint[1]
       }
     } else {
       label += counter
@@ -125,7 +135,6 @@ const setMarkdownFigureNum = (markdown, option) => {
       }
       isFigureImage =  lines[i].match(new RegExp(figureImageReg))
       if (!isFigureImage) break
-      //console.log(isFigureImage)
 
       let j =  i
       while (j >= 0) {
@@ -207,13 +216,13 @@ const setMarkdownFigureNum = (markdown, option) => {
     }
 
     for (let mark of Object.keys(markReg)) {
-      const hasMarkLabel = lines[n].match(markReg[mark]);
+      const hasMarkLabel = lines[n].match(markReg[mark])
       //if (hasMarkLabel) console.log(hasMarkLabel)
       if (hasMarkLabel && opt[mark]) {
         counter[mark]++
         //console.log('lines[n]: ' + lines[n])
         lines[n] = lines[n].replace(new RegExp('^([ \t]*)' + hasMarkLabel[0]), '$1' + label(hasMarkLabel, counter[mark]))
-        if (mark === 'img') {
+        if (mark === 'img' && !opt.noSetAlt) {
           setImageAltNumber(lines, n, mark, hasMarkLabel, counter)
         }
       }

@@ -102,3 +102,26 @@ Figure 2. キャプション
 
 段落。段落。段落。
 ```
+
+
+## Option
+
+### noSetAlt
+
+[Input]
+図 キャプション
+
+![ALT-A](image.jpg)
+
+図 キャプション
+
+![ALT-B](image.jpg)
+
+[Output]
+図1 キャプション
+
+![ALT-A](image.jpg)
+
+図2 キャプション
+
+![ALT-B](image.jpg)
