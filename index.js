@@ -1,123 +1,37 @@
-const setMarkdownFigureNum = (markdown, option) => {
+import { markReg as markRegEx, joint as jointStr } from "p7d-markdown-it-p-captions"
 
-  let opt = {
-    img: true,
-    table: false,
-    code: false,
-    samp: false,
-    blockquote: false,
-    slide: false,
-    noSetAlt: false,
-    setImgAlt: false,
+
+const markReg = markRegEx
+const joint = jointStr
+//console.log(markReg)
+//console.log(joint)
+
+const label = (hasMarkLabel, counter, isAlt) => {
+  let label = hasMarkLabel[0]
+  //console.log('label: ' + label + ' counter: ' + counter)
+  let LabelIsEn = /^[a-zA-Z]/.test(label)
+  const spaceBeforeCounter = LabelIsEn ? ' ' : ''
+
+  //console.log(hasMarkLabel)
+  if (hasMarkLabel[3]) {
+    label = hasMarkLabel[0].replace(new RegExp(hasMarkLabel[3] + '$'), '')
+  } else if (hasMarkLabel[4]) {
+    label = hasMarkLabel[4]
   }
-  opt["pre-code"] = opt.code
-  opt["pre-samp"] = opt.samp
-  if (option !== undefined) {
-    for (let o in option) {
-      opt[o] = option[o];
-    }
-  }
+  let hasLabelLastJoint = hasMarkLabel[0].match(new RegExp('(' + joint +')$'))
 
-
-  const markAfterNum = '[A-Z0-9]{1,6}(?:[.-][A-Z0-9]{1,6}){0,5}';
-  const joint = '[.:．。：　]';
-  const jointFullWidth = '[．。：　]';
-  const jointHalfWidth = '[.:]';
-
-  const markAfterEn = '(?:' +
-    ' *(?:' +
-      jointHalfWidth + '(?:(?=[ ]+)|$)|' +
-      jointFullWidth + '|' +
-      '(?=[ ]+[^0-9a-zA-Z])' +
-    ')|' +
-    ' *' + '(' + markAfterNum + ')(?:' +
-      jointHalfWidth + '(?:(?=[ ]+)|$)|' +
-      jointFullWidth + '|' +
-      '(?=[ ]+[^a-z])|$' +
-    ')|' +
-    '[.](' + markAfterNum + ')(?:' +
-      joint + '|(?=[ ]+[^a-z])|$' +
-    ')|' +
-    '[ 　]*$' +
-  ')';
-
-  const markAfterJa = '(?:' +
-    ' *(?:' +
-      jointHalfWidth + '(?:(?=[ ]+)|$)|' +
-      jointFullWidth + '|' +
-      '(?=[ ]+)' +
-    ')|' +
-    ' *' + '(' + markAfterNum + ')(?:' +
-      jointHalfWidth + '(?:(?=[ ]+)|$)|' +
-      jointFullWidth + '|' +
-      '(?=[ ]+)|$' +
-    ')|' +
-    '[ 　]*$' +
-  ')';
-
-  const markReg = {
-    //fig(ure)?, illust, photo
-    "img": new RegExp('^(?:' +
-      '(?:[fF][iI][gG](?:[uU][rR][eE])?|[iI][lL]{2}[uU][sS][tT]|[pP][hH][oO][tT][oO])'+ markAfterEn + '|' +
-      '(?:図|イラスト|写真)' + markAfterJa +
-    ')'),
-    //movie, video
-    "video": new RegExp('^(?:' +
-      '(?:[mM][oO][vV][iI][eE]|[vV][iI][dD][eE][oO])'+ markAfterEn + '|' +
-      '(?:動画|ビデオ)' + markAfterJa +
-    ')'),
-    //table
-    "table": new RegExp('^(?:' +
-      '(?:[tT][aA][bB][lL][eE])'+ markAfterEn + '|' +
-      '(?:表)' + markAfterJa +
-    ')'),
-    //code(block)?, program
-    "pre-code": new RegExp('^(?:' +
-      '(?:[cC][oO][dD][eE](?:[bB][lL][oO][cC][kK])?|[pP][rR][oO][gG][rR][aA][mM]|[aA][lL][gG][oO][rR][iI][tT][hH][mM])'+ markAfterEn + '|' +
-      '(?:(?:ソース)?コード|リスト|命令|プログラム|算譜|アルゴリズム|算法)' + markAfterJa +
-    ')'),
-    //terminal, prompt, command
-    "pre-samp": new RegExp('^(?:' +
-      '(?:[cC][oO][nN][sS][oO][lL][eE]|[tT][eE][rR][mM][iI][nN][aA][lL]|[pP][rR][oO][mM][pP][tT]|[cC][oO][mM]{2}[aA][nN][dD])'+ markAfterEn + '|' +
-      '(?:端末|ターミナル|コマンド|(?:コマンド)?プロンプト)' + markAfterJa +
-    ')'),
-    //quote, blockquote, source
-    "blockquote": new RegExp('^(?:' +
-      '(?:(?:[bB][lL][oO][cC][kK])?[qQ][uU][oO][tT][eE]|[sS][oO][uU][rR][cC][eE])'+ markAfterEn + '|' +
-      '(?:引用(?:元)?|出典)' + markAfterJa +
-    ')'),
-    //slide
-    "slide": new RegExp('^(?:' +
-      '(?:[sS][lL][iI][dD][eE])'+ markAfterEn + '|' +
-      '(?:スライド)' + markAfterJa +
-    ')')
-  };
-
-  const label = (hasMarkLabel, counter, isAlt) => {
-
-    let label = hasMarkLabel[0]
-    let LabelIsEn = /[a-zA-Z]/.test(label)
-    let spaceBeforeCounter = ''
-    if (LabelIsEn) {
-      spaceBeforeCounter = ' '
-    }
-
-    if (hasMarkLabel[3]) {
-      label = hasMarkLabel[0].replace(new RegExp(hasMarkLabel[3] + '$'), '')
-    }
-    let isLabelLastJoint = label.match(new RegExp('(' + joint +')$'))
-
-    if (isLabelLastJoint) {
-      if (isAlt) {
-        label = label.replace(new RegExp(joint +'$'), '') + spaceBeforeCounter + counter
-      } else {
-        label = label.replace(new RegExp(joint +'$'), '') + spaceBeforeCounter + counter + isLabelLastJoint[1]
-      }
+  if (hasLabelLastJoint) {
+    if (isAlt) {
+      label = label.replace(new RegExp(joint +'$'), '') + spaceBeforeCounter + counter
     } else {
-      label += counter
+      label = label.replace(new RegExp(joint +'$'), '') + spaceBeforeCounter + counter + hasLabelLastJoint[1]
     }
-    return label
+  } else {
+    label += counter
   }
+  //console.log('label: ' + label)
+  return label
+}
 
 
   const setImageAltNumber = (lines, n,  mark, hasMarkLabel, counter) => {
@@ -175,6 +89,19 @@ const setMarkdownFigureNum = (markdown, option) => {
     return
   }
 
+const setMarkdownFigureNum = (markdown, option) => {
+    let opt = {
+      img: true,
+      table: false,
+      'pre-code': false,
+      'pre-samp': false,
+      blockquote: false,
+      slide: false,
+      noSetAlt: false,
+      setImgAlt: false,
+    }
+    if (option) Object.assign(opt, option)
+
   let n = 0
   let lines = []
   let lineBreaks = []
@@ -187,11 +114,11 @@ const setMarkdownFigureNum = (markdown, option) => {
     slide: 0,
   }
 
-
   lines = markdown.split(/\r\n|\n/)
   lineBreaks = markdown.match(/\r\n|\n/g);
   let isBackquoteCodeBlock = false
   let isTildeCodeBlock = false
+  let isMathBlock = false
 
   if(lines.length === 0) return markdown
 
@@ -210,17 +137,24 @@ const setMarkdownFigureNum = (markdown, option) => {
         isTildeCodeBlock = true
       }
     }
-    if (isBackquoteCodeBlock || isTildeCodeBlock) {
+    if (lines[n].match(/^ *\$\$/)) {
+      if (isMathBlock) {
+        isMathBlock = false
+      } else {
+        isMathBlock = true
+      }
+    }
+    if (isBackquoteCodeBlock || isTildeCodeBlock || isMathBlock) {
       n++
       continue
     }
 
+    //console.log('====== n: ' + n + ' lines[n]: ' + lines[n])
     for (let mark of Object.keys(markReg)) {
       const hasMarkLabel = lines[n].match(markReg[mark])
-      //if (hasMarkLabel) console.log(hasMarkLabel)
       if (hasMarkLabel && opt[mark]) {
+        //console.log(hasMarkLabel)
         counter[mark]++
-        //console.log('lines[n]: ' + lines[n])
         lines[n] = lines[n].replace(new RegExp('^([ \t]*)' + hasMarkLabel[0]), '$1' + label(hasMarkLabel, counter[mark]))
         if (mark === 'img' && !opt.noSetAlt) {
           setImageAltNumber(lines, n, mark, hasMarkLabel, counter)

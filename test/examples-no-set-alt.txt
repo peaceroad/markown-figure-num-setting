@@ -18,19 +18,38 @@
 
 
 [Input]
-図
+図3 キャプション
 
 ![ALT-A](image.jpg)
 
-図
+図6 キャプション
 
 ![ALT-B](image.jpg)
 
 [Output]
-図1
+図1 キャプション
 
 ![ALT-A](image.jpg)
 
-図2
+図2 キャプション
 
 ![ALT-B](image.jpg)
+
+
+[Input]
+図 キャプション
+
+![](image.jpg)
+
+図 キャプション
+
+![](image.jpg)
+
+[Output]
+図1 キャプション
+
+![](image.jpg)
+
+図2 キャプション
+
+![](image.jpg)

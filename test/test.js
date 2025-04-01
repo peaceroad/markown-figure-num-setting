@@ -10,6 +10,8 @@ if (isWindows) {
   __dirname = __dirname.replace(/^\/+/, '').replace(/\//g, '\\')
 }
 
+let pass = true
+
 const check = (name, ex) => {
   const exCont = fs.readFileSync(ex, 'utf-8').trim()
   let ms = [];
@@ -35,7 +37,7 @@ const check = (name, ex) => {
 
   n = 1
   while(n < ms.length) {
-    //if (n !== 10) { n++; continue }
+    //if (n !== 11) {n++; continue }
     console.log('Test: ' + n + ' >>>')
     const m = ms[n].inputMarkdown
     let h
@@ -51,9 +53,10 @@ const check = (name, ex) => {
     try {
       assert.strictEqual(h, ms[n].outputMarkdown)
     } catch(e) {
+      pass = false
       console.log('incorrect: ')
-      //console.log(m)
-      //console.log('::convert ->')
+      console.log(m)
+      console.log('::convert ->')
       console.log('H: ' + h +'\n\nC: ' + ms[n].outputMarkdown)
     }
     n++
@@ -66,6 +69,8 @@ const example = {
   noSetAlt: __dirname + path.sep + 'examples-no-set-alt.txt',
 }
 for (let ex in example) {
+  console.log('[' + ex + '] >>> ' + example[ex])
   check(ex, example[ex])
 }
 
+if (pass) console.log('\nAll tests passed.')
