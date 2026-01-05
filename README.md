@@ -29,13 +29,13 @@ setMarkdownFigureNum(markdownCont)
 
 図1 キャプション
 
-![図1](image.jpg)
+![](image.jpg)
 
 段落。段落。段落。
 
 図2 キャプション
 
-![図2](image.jpg)
+![](image.jpg)
 
 段落。段落。段落。
 
@@ -61,13 +61,13 @@ setMarkdownFigureNum(markdownCont)
 
 図1 キャプション
 
-![図1](image.jpg)
+![](image.jpg)
 
 段落。段落。段落。
 
 図2 キャプション
 
-![図2](image.jpg)
+![](image.jpg)
 
 段落。段落。段落。
 
@@ -90,15 +90,15 @@ Figure. キャプション
 [Output]
 段落。段落。段落。
 
-Figure1. キャプション
+Figure 1. キャプション
 
-![Figure 1](image.jpg)
+![](image.jpg)
 
 段落。段落。段落。
 
 Figure 2. キャプション
 
-![Figure 2](image.jpg)
+![](image.jpg)
 
 段落。段落。段落。
 ```
@@ -106,8 +106,11 @@ Figure 2. キャプション
 
 ## Option
 
-### noSetAlt
+### setNumberAlt
 
+Default behavior leaves image alt text unchanged. Set `setNumberAlt: true` to add the label number to alt.
+
+```
 [Input]
 図 キャプション
 
@@ -120,8 +123,9 @@ Figure 2. キャプション
 [Output]
 図1 キャプション
 
-![ALT-A](image.jpg)
+![図1](image.jpg)
 
 図2 キャプション
 
-![ALT-B](image.jpg)
+![図2](image.jpg)
+```

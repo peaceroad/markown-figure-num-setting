@@ -2,7 +2,6 @@ import assert from 'assert'
 import fs from 'fs'
 import path from 'path'
 import setMarkdownFigureNum from '../index.js'
-import setMarkdownFigureNumWithNoSetAlt from '../index.js'
 
 let __dirname = path.dirname(new URL(import.meta.url).pathname)
 const isWindows = (process.platform === 'win32')
@@ -45,9 +44,9 @@ const check = (name, ex) => {
     if (name === 'default') {
       h = setMarkdownFigureNum(m)
     }
-    if (name === 'noSetAlt') {
-      option.noSetAlt = true
-      h = setMarkdownFigureNumWithNoSetAlt(m, option)
+    if (name === 'setNumberAlt') {
+      option.setNumberAlt = true
+      h = setMarkdownFigureNum(m, option)
     }
 
     try {
@@ -65,8 +64,8 @@ const check = (name, ex) => {
 
 
 const example = {
-  default: __dirname + path.sep + 'examples.txt',
-  noSetAlt: __dirname + path.sep + 'examples-no-set-alt.txt',
+  default: __dirname + path.sep + 'examples-no-set-alt.txt',
+  setNumberAlt: __dirname + path.sep + 'examples.txt',
 }
 for (let ex in example) {
   console.log('[' + ex + '] >>> ' + example[ex])
