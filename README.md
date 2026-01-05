@@ -10,95 +10,94 @@ setMarkdownFigureNum(markdownCont)
 
 ```
 [Input]
-段落。段落。段落。
+Paragraph. 
 
-図 キャプション
+Figure. A Caption
 
-![](image.jpg)
+![A alt text.](image.jpg)
 
-段落。段落。段落。
+Paragraph. 
 
-図 キャプション
+Figure. A Caption
 
-![](image.jpg)
+![A alt text.](image.jpg)
 
-段落。段落。段落。
+Paragraph. 
 
 [Output]
-段落。段落。段落。
+Paragraph. 
 
-図1 キャプション
+Figure 1. A Caption
 
-![](image.jpg)
+![A alt text.](image.jpg)
 
-段落。段落。段落。
+Paragraph. 
 
-図2 キャプション
+Figure 2. A Caption
 
-![](image.jpg)
+![A alt text.](image.jpg)
 
-段落。段落。段落。
+Paragraph. 
 
+
+[Input]
+Paragraph. 
+
+Figure 1. A Caption
+
+![A alt text.](image.jpg)
+
+Paragraph. 
+
+Figure 1. A Caption
+
+![A alt text.](image.jpg)
+
+Paragraph. 
+
+[Output]
+Paragraph. 
+
+Figure 1. A Caption
+
+![A alt text.](image.jpg)
+
+Paragraph. 
+
+Figure 2. A Caption
+
+![A alt text.](image.jpg)
+
+Paragraph. 
 
 
 [Input]
 段落。段落。段落。
 
-図1 キャプション
+図 キャプション
 
-![](image.jpg)
-
-段落。段落。段落。
-
-図2 キャプション
-
-![](image.jpg)
+![A alt text.](image.jpg)
 
 段落。段落。段落。
 
-[Output]
-段落。段落。段落。
+図 キャプション
 
-図1 キャプション
-
-![](image.jpg)
-
-段落。段落。段落。
-
-図2 キャプション
-
-![](image.jpg)
-
-段落。段落。段落。
-
-
-[Input]
-段落。段落。段落。
-
-Figure. キャプション
-
-![](image.jpg)
-
-段落。段落。段落。
-
-Figure. キャプション
-
-![](image.jpg)
+![A alt text.](image.jpg)
 
 段落。段落。段落。
 
 [Output]
 段落。段落。段落。
 
-Figure 1. キャプション
+図1 キャプション
 
-![](image.jpg)
+![A alt text.](image.jpg)
 
 段落。段落。段落。
 
-Figure 2. キャプション
+図2 キャプション
 
-![](image.jpg)
+![A alt text.](image.jpg)
 
 段落。段落。段落。
 ```
