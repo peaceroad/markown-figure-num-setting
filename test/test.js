@@ -11,7 +11,7 @@ if (isWindows) {
 
 let pass = true
 
-const check = (name, ex) => {
+const check = (name, ex, option) => {
   const exCont = fs.readFileSync(ex, 'utf-8').trim()
   let ms = [];
   let ms0 = exCont.split(/\n*\[Input\]\n/)
@@ -39,15 +39,7 @@ const check = (name, ex) => {
     //if (n !== 11) {n++; continue }
     console.log('Test: ' + n + ' >>>')
     const m = ms[n].inputMarkdown
-    let h
-    let option = {}
-    if (name === 'default') {
-      h = setMarkdownFigureNum(m)
-    }
-    if (name === 'setNumberAlt') {
-      option.setNumberAlt = true
-      h = setMarkdownFigureNum(m, option)
-    }
+    const h = setMarkdownFigureNum(m, option)
 
     try {
       assert.strictEqual(h, ms[n].outputMarkdown)
@@ -63,13 +55,49 @@ const check = (name, ex) => {
 }
 
 
-const example = {
-  default: __dirname + path.sep + 'examples-no-set-alt.txt',
-  setNumberAlt: __dirname + path.sep + 'examples.txt',
+const testCases = {
+  default: {
+    file: __dirname + path.sep + 'examples-no-set-alt.txt',
+    option: undefined,
+  },
+  setNumberAlt: {
+    file: __dirname + path.sep + 'examples.txt',
+    option: { setNumberAlt: true },
+  },
+  setNumberAltPreSamp: {
+    file: __dirname + path.sep + 'examples-pre-samp.txt',
+    option: { setNumberAlt: true, 'pre-samp': true },
+  },
+  setNumberAltLabelMarkMap: {
+    file: __dirname + path.sep + 'examples-label-mark-map.txt',
+    option: { setNumberAlt: true, 'pre-samp': true, labelMarkMap: { '図': 'pre-samp' } },
+  },
 }
-for (let ex in example) {
-  console.log('[' + ex + '] >>> ' + example[ex])
-  check(ex, example[ex])
+for (let name in testCases) {
+  console.log('[' + name + '] >>> ' + testCases[name].file)
+  check(name, testCases[name].file, testCases[name].option)
 }
+
+const mixedLineBreakInput =
+  'Figure. A\r\n' +
+  '\r\n' +
+  '![](a.jpg)\n' +
+  '\n' +
+  'Figure. B\r\n' +
+  '\r\n' +
+  '![](b.jpg)'
+const mixedLineBreakOutput =
+  'Figure 1. A\r\n' +
+  '\r\n' +
+  '![Figure 1](a.jpg)\n' +
+  '\n' +
+  'Figure 2. B\r\n' +
+  '\r\n' +
+  '![Figure 2](b.jpg)'
+assert.strictEqual(setMarkdownFigureNum(mixedLineBreakInput, { setNumberAlt: true }), mixedLineBreakOutput)
+
+assert.strictEqual(setMarkdownFigureNum(null), null)
+assert.strictEqual(setMarkdownFigureNum(undefined), undefined)
+assert.strictEqual(setMarkdownFigureNum(123), 123)
 
 if (pass) console.log('\nAll tests passed.')

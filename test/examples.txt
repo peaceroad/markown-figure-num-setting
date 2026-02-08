@@ -346,3 +346,146 @@ Figure 2. キャプション
 ![図6](Src)
 
 段落。段落。段落。段落。段落。段落。段落。段落。段落。
+
+
+[Input]
+This line is [Figure][#flag] paragraph.
+
+Figure. A caption.
+
+![](cat.jpg) {#flag}
+
+Figure. A caption.
+
+![](cat.jpg) {#flag2}
+
+A paragraph. [Figure][#flag2] paragraph.
+
+[Output]
+This line is [Figure][#flag] paragraph.
+
+Figure 1. A caption.
+
+![Figure 1](cat.jpg) {#flag}
+
+Figure 2. A caption.
+
+![Figure 2](cat.jpg) {#flag2}
+
+A paragraph. [Figure][#flag2] paragraph.
+
+
+[Input]
+図 キャプション
+
+![ALT](image(1).jpg "A title")
+
+図 キャプション
+
+![](image2.jpg){#img-id}
+
+[Output]
+図1 キャプション
+
+![図1](image(1).jpg "A title")
+
+図2 キャプション
+
+![図2](image2.jpg){#img-id}
+
+
+[Input]
+~~~
+Figure. A
+![](a.jpg)
+~~~
+
+Figure. B
+
+![](b.jpg)
+
+[Output]
+~~~
+Figure. A
+![](a.jpg)
+~~~
+
+Figure 1. B
+
+![Figure 1](b.jpg)
+
+
+[Input]
+$$
+Figure. A
+$$
+
+Figure. B
+
+![](b.jpg)
+
+[Output]
+$$
+Figure. A
+$$
+
+Figure 1. B
+
+![Figure 1](b.jpg)
+
+
+[Input]
+図 キャプション
+
+![A\]B](img\(1\).jpg "t(1)")
+
+図 キャプション
+
+![C](img2.jpg){#img-id}
+
+[Output]
+図1 キャプション
+
+![図1](img\(1\).jpg "t(1)")
+
+図2 キャプション
+
+![図2](img2.jpg){#img-id}
+
+
+[Input]
+`````
+```md
+Figure. In a code block
+```
+`````
+
+Figure. Out of code block
+
+![](fence.jpg)
+
+[Output]
+`````
+```md
+Figure. In a code block
+```
+`````
+
+Figure 1. Out of code block
+
+![Figure 1](fence.jpg)
+
+
+[Input]
+$$ E = mc^2 $$
+
+Figure. Inline math should not start a block
+
+![](inline-math.jpg)
+
+[Output]
+$$ E = mc^2 $$
+
+Figure 1. Inline math should not start a block
+
+![Figure 1](inline-math.jpg)

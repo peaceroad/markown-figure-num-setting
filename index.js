@@ -1,22 +1,41 @@
-import { markReg as markRegEx, joint as jointStr } from "p7d-markdown-it-p-captions"
+import { getMarkRegForLanguages, joint as jointStr } from "p7d-markdown-it-p-captions"
 
 
-const markReg = markRegEx
-const markRegKeys = Object.keys(markReg)
-const joint = jointStr
-const jointSuffixCaptureReg = new RegExp('(' + joint + ')$')
+const markReg = getMarkRegForLanguages()
+const markRegEntries = Object.entries(markReg)
+const jointSuffixCaptureReg = new RegExp('(' + jointStr + ')$')
 const asciiAlphaStartReg = /^[A-Za-z]/
 const blankLineReg = /^[ \t]*$/
-const figureImageReg = /^([ \t]*\!\[) *?(.*?([0-9]*)) *?(\]\(.*?\))/
-//console.log(markReg)
-//console.log(joint)
+const trailingDigitsReg = /([0-9]*)$/
+const lineSplitReg = /\r\n|\n/
+const lineBreakReg = /\r\n|\n/g
+const mathFenceFullLineReg = /^[ \t]*(\${2,})[ \t]*$/
+const defaultOption = Object.freeze({
+  img: true,
+  video: false,
+  table: false,
+  'pre-code': false,
+  'pre-samp': false,
+  blockquote: false,
+  slide: false,
+  audio: false,
+  labelMarkMap: null,
+  noSetAlt: true,
+  setNumberAlt: false,
+  setImgAlt: false,
+})
+
+const getMarkLabelFromMatch = (hasMarkLabel) => {
+  for (let i = 1; i < hasMarkLabel.length; i++) {
+    if (hasMarkLabel[i] !== undefined) {
+      return hasMarkLabel[i]
+    }
+  }
+  return hasMarkLabel[0]
+}
 
 const getLabelInfo = (hasMarkLabel) => {
-  const markLabel = hasMarkLabel[1] !== undefined
-    ? hasMarkLabel[1]
-    : hasMarkLabel[4] !== undefined
-      ? hasMarkLabel[4]
-      : hasMarkLabel[0]
+  const markLabel = getMarkLabelFromMatch(hasMarkLabel)
   const jointMatch = hasMarkLabel[0].match(jointSuffixCaptureReg)
   return {
     markLabel,
@@ -34,133 +53,268 @@ const buildLabel = (labelInfo, counter, isAlt) => {
 }
 
 
-const setImageAltNumber = (lines, n, currentNumber, altLabel) => {
-  const prevNumber = currentNumber - 1
-  let i = n - 1
-  //console.log('lines[n]: ' + lines[n])
-  //console.log('CheckPrevLine')
-  while (i >= 0 && blankLineReg.test(lines[i])) {
-    i--
-  }
-  if (i >= 0) {
-    const isFigureImage = lines[i].match(figureImageReg)
-    if (isFigureImage) {
-      //console.log(isFigureImage[3], prevNumber.toString())
-      if (isFigureImage[3] !== prevNumber.toString()) {
-        lines[i] = lines[i].replace(figureImageReg, '$1' + altLabel + '$4')
-        //console.log('ChangePrevLine: ' + lines[i])
-        return
-      }
-    }
-  }
-
-  //console.log('CheckNextLine')
-  i = n + 1
-  while (i < lines.length && blankLineReg.test(lines[i])) {
+const parseImageLine = (line) => {
+  let i = 0
+  while (i < line.length && (line[i] === ' ' || line[i] === '\t')) {
     i++
   }
-  if (i < lines.length) {
-    const isFigureImage = lines[i].match(figureImageReg)
-    //console.log(isFigureImage)
-    if (isFigureImage) {
-      lines[i] = lines[i].replace(figureImageReg, '$1' + altLabel + '$4')
-      //console.log('ChangeNextLine: ' + lines[i])
-    }
-  }
-  return
-}
-
-const setMarkdownFigureNum = (markdown, option) => {
-    let opt = {
-      img: true,
-      table: false,
-      'pre-code': false,
-      'pre-samp': false,
-      blockquote: false,
-      slide: false,
-      noSetAlt: true,
-      setNumberAlt: false,
-      setImgAlt: false,
-    }
-    if (option) Object.assign(opt, option)
-    const shouldSetAlt = opt.setNumberAlt || opt.setImgAlt || opt.noSetAlt === false
-
-  let n = 0
-  let lines = []
-  let lineBreaks = []
-  const counter = {
-    img: 0,
-    table: 0,
-    "pre-code": 0,
-    "pre-samp": 0,
-    blockquote: 0,
-    slide: 0,
+  if (line[i] !== '!' || line[i + 1] !== '[') {
+    return null
   }
 
-  lines = markdown.split(/\r\n|\n/)
-  lineBreaks = markdown.match(/\r\n|\n/g);
-  let isBackquoteCodeBlock = false
-  let isTildeCodeBlock = false
-  let isMathBlock = false
+  const altStart = i + 2
+  let altEnd = altStart
+  let escaped = false
+  while (altEnd < line.length) {
+    const ch = line[altEnd]
+    if (escaped) {
+      escaped = false
+    } else if (ch === '\\') {
+      escaped = true
+    } else if (ch === ']') {
+      break
+    }
+    altEnd++
+  }
+  if (altEnd >= line.length || line[altEnd + 1] !== '(') {
+    return null
+  }
 
-  if(lines.length === 0) return markdown
-
-  while (n < lines.length) {
-    if (lines[n].match(/^ *```/)) {
-      if (isBackquoteCodeBlock) {
-        isBackquoteCodeBlock = false
-      } else {
-        isBackquoteCodeBlock = true
-      }
-    }
-    if (lines[n].match(/^ *~~~/)) {
-      if (isTildeCodeBlock) {
-        isTildeCodeBlock = false
-      } else {
-        isTildeCodeBlock = true
-      }
-    }
-    if (lines[n].match(/^ *\$\$/)) {
-      if (isMathBlock) {
-        isMathBlock = false
-      } else {
-        isMathBlock = true
-      }
-    }
-    if (isBackquoteCodeBlock || isTildeCodeBlock || isMathBlock) {
-      n++
-      continue
-    }
-
-    //console.log('====== n: ' + n + ' lines[n]: ' + lines[n])
-    for (let mark of markRegKeys) {
-      const hasMarkLabel = lines[n].match(markReg[mark])
-      if (hasMarkLabel && opt[mark]) {
-        //console.log(hasMarkLabel)
-        counter[mark]++
-        const labelInfo = getLabelInfo(hasMarkLabel)
-        const captionLabel = buildLabel(labelInfo, counter[mark], false)
-        lines[n] = lines[n].replace(hasMarkLabel[0], () => captionLabel)
-        if (mark === 'img' && shouldSetAlt) {
-          const altLabel = buildLabel(labelInfo, counter[mark], true)
-          setImageAltNumber(lines, n, counter[mark], altLabel)
+  let n = altEnd + 2
+  let parenDepth = 1
+  let inSingleQuote = false
+  let inDoubleQuote = false
+  escaped = false
+  while (n < line.length) {
+    const ch = line[n]
+    if (escaped) {
+      escaped = false
+    } else if (ch === '\\') {
+      escaped = true
+    } else if (inSingleQuote) {
+      if (ch === "'") inSingleQuote = false
+    } else if (inDoubleQuote) {
+      if (ch === '"') inDoubleQuote = false
+    } else if (ch === "'") {
+      inSingleQuote = true
+    } else if (ch === '"') {
+      inDoubleQuote = true
+    } else if (ch === '(') {
+      parenDepth++
+    } else if (ch === ')') {
+      parenDepth--
+      if (parenDepth === 0) {
+        const alt = line.slice(altStart, altEnd)
+        const trailingDigitsMatch = alt.match(trailingDigitsReg)
+        return {
+          alt,
+          altStart,
+          altEnd,
+          trailingDigits: trailingDigitsMatch ? trailingDigitsMatch[1] : '',
         }
       }
     }
     n++
   }
-  n = 0
-  markdown = ''
+
+  return null
+}
+
+const replaceImageAlt = (line, altLabel, parsedImage) => {
+  return line.slice(0, parsedImage.altStart) + altLabel + line.slice(parsedImage.altEnd)
+}
+
+const parseFenceSequence = (line) => {
+  let i = 0
+  while (i < line.length && (line[i] === ' ' || line[i] === '\t')) {
+    i++
+  }
+  const marker = line[i]
+  if (marker !== '`' && marker !== '~') {
+    return null
+  }
+  let j = i
+  while (line[j] === marker) {
+    j++
+  }
+  const length = j - i
+  if (length < 3) {
+    return null
+  }
+  return {
+    marker,
+    length,
+    rest: line.slice(j),
+  }
+}
+
+const parseCodeFenceOpen = (line) => {
+  const fence = parseFenceSequence(line)
+  if (!fence) {
+    return null
+  }
+  // CommonMark-style guard: backtick fence info text cannot contain backticks.
+  if (fence.marker === '`' && fence.rest.includes('`')) {
+    return null
+  }
+  return {
+    marker: fence.marker,
+    length: fence.length,
+  }
+}
+
+const isCodeFenceClose = (line, fenceOpen) => {
+  const fence = parseFenceSequence(line)
+  if (!fence) {
+    return false
+  }
+  if (fence.marker !== fenceOpen.marker || fence.length < fenceOpen.length) {
+    return false
+  }
+  return blankLineReg.test(fence.rest)
+}
+
+const getMathFenceLength = (line) => {
+  const match = line.match(mathFenceFullLineReg)
+  return match ? match[1].length : 0
+}
+
+const setImageAltNumber = (lines, n, currentNumber, altLabel) => {
+  const prevNumber = (currentNumber - 1).toString()
+  let i = n - 1
+  while (i >= 0 && blankLineReg.test(lines[i])) {
+    i--
+  }
+  if (i >= 0) {
+    const parsedImage = parseImageLine(lines[i])
+    if (parsedImage) {
+      if (parsedImage.trailingDigits !== prevNumber) {
+        lines[i] = replaceImageAlt(lines[i], altLabel, parsedImage)
+        return
+      }
+    }
+  }
+
+  i = n + 1
+  while (i < lines.length && blankLineReg.test(lines[i])) {
+    i++
+  }
+  if (i < lines.length) {
+    const parsedImage = parseImageLine(lines[i])
+    if (parsedImage) {
+      lines[i] = replaceImageAlt(lines[i], altLabel, parsedImage)
+    }
+  }
+}
+
+const joinLinesWithOriginalLineBreaks = (lines, lineBreaks) => {
+  if (lineBreaks.length === 0) {
+    return lines[0]
+  }
+
+  let markdown = lines[0]
+  let n = 1
   while (n < lines.length) {
-    if (n === lines.length - 1) {
-      markdown += lines[n]
-    } else {
-      markdown += lines[n] + lineBreaks[n]
+    markdown += lineBreaks[n - 1] + lines[n]
+    n++
+  }
+  return markdown
+}
+
+const selectCaptionCandidate = (line, activeMarkEntries, labelMarkMap) => {
+  let firstCandidate = null
+  for (let i = 0; i < activeMarkEntries.length; i++) {
+    const mark = activeMarkEntries[i][0]
+    const hasMarkLabel = line.match(activeMarkEntries[i][1])
+    if (!hasMarkLabel) {
+      continue
+    }
+    const labelInfo = getLabelInfo(hasMarkLabel)
+    const candidate = {
+      mark,
+      hasMarkLabel,
+      labelInfo,
+    }
+    if (!firstCandidate) {
+      firstCandidate = candidate
+    }
+    if (labelMarkMap && labelMarkMap[labelInfo.markLabel] === mark) {
+      return candidate
+    }
+  }
+  return firstCandidate
+}
+
+const setMarkdownFigureNum = (markdown, option) => {
+  if (typeof markdown !== 'string') {
+    return markdown
+  }
+
+  const opt = option ? { ...defaultOption, ...option } : defaultOption
+  const shouldSetAlt = opt.setNumberAlt || opt.setImgAlt || opt.noSetAlt === false
+  const labelMarkMap = opt.labelMarkMap && typeof opt.labelMarkMap === 'object'
+    ? opt.labelMarkMap
+    : null
+  const activeMarkEntries = markRegEntries.filter(([mark]) => opt[mark])
+  if (activeMarkEntries.length === 0) {
+    return markdown
+  }
+
+  const lines = markdown.split(lineSplitReg)
+  const lineBreaks = markdown.match(lineBreakReg) || []
+  const counter = {}
+  for (let i = 0; i < activeMarkEntries.length; i++) {
+    counter[activeMarkEntries[i][0]] = 0
+  }
+
+  let codeFenceOpen = null
+  let mathFenceLength = 0
+
+  let n = 0
+  while (n < lines.length) {
+    if (codeFenceOpen) {
+      if (isCodeFenceClose(lines[n], codeFenceOpen)) {
+        codeFenceOpen = null
+      }
+      n++
+      continue
+    }
+    if (mathFenceLength > 0) {
+      if (getMathFenceLength(lines[n]) >= mathFenceLength) {
+        mathFenceLength = 0
+      }
+      n++
+      continue
+    }
+
+    const codeFenceStart = parseCodeFenceOpen(lines[n])
+    if (codeFenceStart) {
+      codeFenceOpen = codeFenceStart
+      n++
+      continue
+    }
+    const mathFenceStartLength = getMathFenceLength(lines[n])
+    if (mathFenceStartLength > 0) {
+      mathFenceLength = mathFenceStartLength
+      n++
+      continue
+    }
+
+    const selectedCandidate = selectCaptionCandidate(lines[n], activeMarkEntries, labelMarkMap)
+    if (selectedCandidate) {
+      const mark = selectedCandidate.mark
+      counter[mark]++
+      const labelInfo = selectedCandidate.labelInfo
+      const captionLabel = buildLabel(labelInfo, counter[mark], false)
+      lines[n] = lines[n].replace(selectedCandidate.hasMarkLabel[0], () => captionLabel)
+      if (mark === 'img' && shouldSetAlt) {
+        const altLabel = buildLabel(labelInfo, counter[mark], true)
+        setImageAltNumber(lines, n, counter[mark], altLabel)
+      }
     }
     n++
   }
-
-  return markdown
+  return joinLinesWithOriginalLineBreaks(lines, lineBreaks)
 }
 
 export default setMarkdownFigureNum
