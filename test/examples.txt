@@ -489,3 +489,22 @@ $$ E = mc^2 $$
 Figure 1. Inline math should not start a block
 
 ![Figure 1](inline-math.jpg)
+
+
+[Input]
+Figure. First
+
+![](a.jpg)
+
+![screenshot1](b.jpg)
+
+Figure. Second
+
+[Output]
+Figure 1. First
+
+![Figure 1](a.jpg)
+
+![Figure 2](b.jpg)
+
+Figure 2. Second

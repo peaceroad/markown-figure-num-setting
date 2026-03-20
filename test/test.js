@@ -11,7 +11,7 @@ if (isWindows) {
 
 let pass = true
 
-const check = (name, ex, option) => {
+const check = (ex, option) => {
   const exCont = fs.readFileSync(ex, 'utf-8').trim()
   let ms = [];
   let ms0 = exCont.split(/\n*\[Input\]\n/)
@@ -36,7 +36,6 @@ const check = (name, ex, option) => {
 
   n = 1
   while(n < ms.length) {
-    //if (n !== 11) {n++; continue }
     console.log('Test: ' + n + ' >>>')
     const m = ms[n].inputMarkdown
     const h = setMarkdownFigureNum(m, option)
@@ -75,7 +74,7 @@ const testCases = {
 }
 for (let name in testCases) {
   console.log('[' + name + '] >>> ' + testCases[name].file)
-  check(name, testCases[name].file, testCases[name].option)
+  check(testCases[name].file, testCases[name].option)
 }
 
 const mixedLineBreakInput =
@@ -99,5 +98,9 @@ assert.strictEqual(setMarkdownFigureNum(mixedLineBreakInput, { setNumberAlt: tru
 assert.strictEqual(setMarkdownFigureNum(null), null)
 assert.strictEqual(setMarkdownFigureNum(undefined), undefined)
 assert.strictEqual(setMarkdownFigureNum(123), 123)
+assert.strictEqual(
+  setMarkdownFigureNum('図 キャプション', { labelMarkMap: { '図': 'pre-samp' } }),
+  '図1 キャプション',
+)
 
 if (pass) console.log('\nAll tests passed.')

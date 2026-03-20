@@ -23,6 +23,6 @@
   },
   "homepage": "https://github.com/peaceroad/markown-figure-num-setting#readme",
   "dependencies": {
-    "p7d-markdown-it-p-captions": "^0.21.0"
+    "p7d-markdown-it-p-captions": "^0.22.0"
   }
 }

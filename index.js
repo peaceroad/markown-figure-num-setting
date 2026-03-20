@@ -1,15 +1,19 @@
-import { getMarkRegForLanguages, joint as jointStr } from "p7d-markdown-it-p-captions"
+import { analyzeCaptionStart, getMarkRegStateForLanguages } from "p7d-markdown-it-p-captions"
 
 
-const markReg = getMarkRegForLanguages()
-const markRegEntries = Object.entries(markReg)
-const jointSuffixCaptureReg = new RegExp('(' + jointStr + ')$')
-const asciiAlphaStartReg = /^[A-Za-z]/
-const blankLineReg = /^[ \t]*$/
-const trailingDigitsReg = /([0-9]*)$/
+const markRegState = getMarkRegStateForLanguages()
+const markOrder = Object.freeze([
+  'img',
+  'video',
+  'table',
+  'pre-code',
+  'pre-samp',
+  'blockquote',
+  'slide',
+  'audio',
+])
 const lineSplitReg = /\r\n|\n/
 const lineBreakReg = /\r\n|\n/g
-const mathFenceFullLineReg = /^[ \t]*(\${2,})[ \t]*$/
 const defaultOption = Object.freeze({
   img: true,
   video: false,
@@ -24,30 +28,32 @@ const defaultOption = Object.freeze({
   setNumberAlt: false,
   setImgAlt: false,
 })
+const defaultActiveMarks = Object.freeze(markOrder.filter((mark) => defaultOption[mark]))
 
-const getMarkLabelFromMatch = (hasMarkLabel) => {
-  for (let i = 1; i < hasMarkLabel.length; i++) {
-    if (hasMarkLabel[i] !== undefined) {
-      return hasMarkLabel[i]
+const isAsciiAlphaStart = (text) => {
+  if (!text) {
+    return false
+  }
+  const code = text.charCodeAt(0)
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122)
+}
+
+const isBlankLine = (line) => {
+  let i = 0
+  while (i < line.length) {
+    const code = line.charCodeAt(i)
+    if (code !== 32 && code !== 9) {
+      return false
     }
+    i++
   }
-  return hasMarkLabel[0]
+  return true
 }
 
-const getLabelInfo = (hasMarkLabel) => {
-  const markLabel = getMarkLabelFromMatch(hasMarkLabel)
-  const jointMatch = hasMarkLabel[0].match(jointSuffixCaptureReg)
-  return {
-    markLabel,
-    joint: jointMatch ? jointMatch[1] : '',
-    needsSpace: asciiAlphaStartReg.test(markLabel),
-  }
-}
-
-const buildLabel = (labelInfo, counter, isAlt) => {
-  let label = labelInfo.markLabel + (labelInfo.needsSpace ? ' ' : '') + counter
-  if (!isAlt && labelInfo.joint) {
-    label += labelInfo.joint
+const buildLabel = (analysis, counter, isAlt) => {
+  let label = analysis.labelText + (isAsciiAlphaStart(analysis.labelText) ? ' ' : '') + counter
+  if (!isAlt && analysis.joint) {
+    label += analysis.joint
   }
   return label
 }
@@ -104,13 +110,9 @@ const parseImageLine = (line) => {
     } else if (ch === ')') {
       parenDepth--
       if (parenDepth === 0) {
-        const alt = line.slice(altStart, altEnd)
-        const trailingDigitsMatch = alt.match(trailingDigitsReg)
         return {
-          alt,
           altStart,
           altEnd,
-          trailingDigits: trailingDigitsMatch ? trailingDigitsMatch[1] : '',
         }
       }
     }
@@ -171,44 +173,57 @@ const isCodeFenceClose = (line, fenceOpen) => {
   if (fence.marker !== fenceOpen.marker || fence.length < fenceOpen.length) {
     return false
   }
-  return blankLineReg.test(fence.rest)
+  return isBlankLine(fence.rest)
 }
 
 const getMathFenceLength = (line) => {
-  const match = line.match(mathFenceFullLineReg)
-  return match ? match[1].length : 0
+  let i = 0
+  while (i < line.length && (line[i] === ' ' || line[i] === '\t')) {
+    i++
+  }
+  const start = i
+  while (line[i] === '$') {
+    i++
+  }
+  const length = i - start
+  if (length < 2) {
+    return 0
+  }
+  while (i < line.length && (line[i] === ' ' || line[i] === '\t')) {
+    i++
+  }
+  return i === line.length ? length : 0
 }
 
-const setImageAltNumber = (lines, n, currentNumber, altLabel) => {
-  const prevNumber = (currentNumber - 1).toString()
+const setImageAltNumber = (lines, n, altLabel, usedImageLineIndexes) => {
   let i = n - 1
-  while (i >= 0 && blankLineReg.test(lines[i])) {
+  while (i >= 0 && isBlankLine(lines[i])) {
     i--
   }
   if (i >= 0) {
     const parsedImage = parseImageLine(lines[i])
-    if (parsedImage) {
-      if (parsedImage.trailingDigits !== prevNumber) {
-        lines[i] = replaceImageAlt(lines[i], altLabel, parsedImage)
-        return
-      }
+    if (parsedImage && !usedImageLineIndexes.has(i)) {
+      lines[i] = replaceImageAlt(lines[i], altLabel, parsedImage)
+      usedImageLineIndexes.add(i)
+      return
     }
   }
 
   i = n + 1
-  while (i < lines.length && blankLineReg.test(lines[i])) {
+  while (i < lines.length && isBlankLine(lines[i])) {
     i++
   }
   if (i < lines.length) {
     const parsedImage = parseImageLine(lines[i])
-    if (parsedImage) {
+    if (parsedImage && !usedImageLineIndexes.has(i)) {
       lines[i] = replaceImageAlt(lines[i], altLabel, parsedImage)
+      usedImageLineIndexes.add(i)
     }
   }
 }
 
 const joinLinesWithOriginalLineBreaks = (lines, lineBreaks) => {
-  if (lineBreaks.length === 0) {
+  if (!lineBreaks || lineBreaks.length === 0) {
     return lines[0]
   }
 
@@ -221,28 +236,32 @@ const joinLinesWithOriginalLineBreaks = (lines, lineBreaks) => {
   return markdown
 }
 
-const selectCaptionCandidate = (line, activeMarkEntries, labelMarkMap) => {
-  let firstCandidate = null
-  for (let i = 0; i < activeMarkEntries.length; i++) {
-    const mark = activeMarkEntries[i][0]
-    const hasMarkLabel = line.match(activeMarkEntries[i][1])
-    if (!hasMarkLabel) {
-      continue
-    }
-    const labelInfo = getLabelInfo(hasMarkLabel)
-    const candidate = {
-      mark,
-      hasMarkLabel,
-      labelInfo,
-    }
-    if (!firstCandidate) {
-      firstCandidate = candidate
-    }
-    if (labelMarkMap && labelMarkMap[labelInfo.markLabel] === mark) {
-      return candidate
-    }
+const selectCaptionAnalysis = (line, activeMarks, activeMarkLookup, labelMarkMap) => {
+  const analysis = analyzeCaptionStart(line, {
+    markRegState,
+    allowedMarks: activeMarks,
+  })
+  if (!analysis || !labelMarkMap) {
+    return analysis
   }
-  return firstCandidate
+
+  const mappedMark = labelMarkMap[analysis.labelText]
+  if (!mappedMark || mappedMark === analysis.mark || !activeMarkLookup[mappedMark]) {
+    return analysis
+  }
+
+  const mappedAnalysis = analyzeCaptionStart(line, {
+    markRegState,
+    preferredMark: mappedMark,
+  })
+  if (
+    mappedAnalysis &&
+    mappedAnalysis.labelText === analysis.labelText &&
+    mappedAnalysis.matchedText === analysis.matchedText
+  ) {
+    return mappedAnalysis
+  }
+  return analysis
 }
 
 const setMarkdownFigureNum = (markdown, option) => {
@@ -250,22 +269,33 @@ const setMarkdownFigureNum = (markdown, option) => {
     return markdown
   }
 
-  const opt = option ? { ...defaultOption, ...option } : defaultOption
+  const opt = option && typeof option === 'object'
+    ? { ...defaultOption, ...option }
+    : defaultOption
   const shouldSetAlt = opt.setNumberAlt || opt.setImgAlt || opt.noSetAlt === false
   const labelMarkMap = opt.labelMarkMap && typeof opt.labelMarkMap === 'object'
     ? opt.labelMarkMap
     : null
-  const activeMarkEntries = markRegEntries.filter(([mark]) => opt[mark])
-  if (activeMarkEntries.length === 0) {
+  const activeMarks = opt === defaultOption
+    ? defaultActiveMarks
+    : markOrder.filter((mark) => opt[mark])
+  if (activeMarks.length === 0) {
     return markdown
   }
 
   const lines = markdown.split(lineSplitReg)
-  const lineBreaks = markdown.match(lineBreakReg) || []
-  const counter = {}
-  for (let i = 0; i < activeMarkEntries.length; i++) {
-    counter[activeMarkEntries[i][0]] = 0
+  const lineBreaks = lines.length > 1 ? markdown.match(lineBreakReg) : null
+  const counter = Object.create(null)
+  for (let i = 0; i < activeMarks.length; i++) {
+    counter[activeMarks[i]] = 0
   }
+  const activeMarkLookup = labelMarkMap ? Object.create(null) : null
+  if (activeMarkLookup) {
+    for (let i = 0; i < activeMarks.length; i++) {
+      activeMarkLookup[activeMarks[i]] = true
+    }
+  }
+  const usedImageLineIndexes = shouldSetAlt ? new Set() : null
 
   let codeFenceOpen = null
   let mathFenceLength = 0
@@ -300,16 +330,15 @@ const setMarkdownFigureNum = (markdown, option) => {
       continue
     }
 
-    const selectedCandidate = selectCaptionCandidate(lines[n], activeMarkEntries, labelMarkMap)
-    if (selectedCandidate) {
-      const mark = selectedCandidate.mark
+    const analysis = selectCaptionAnalysis(lines[n], activeMarks, activeMarkLookup, labelMarkMap)
+    if (analysis) {
+      const mark = analysis.mark
       counter[mark]++
-      const labelInfo = selectedCandidate.labelInfo
-      const captionLabel = buildLabel(labelInfo, counter[mark], false)
-      lines[n] = lines[n].replace(selectedCandidate.hasMarkLabel[0], () => captionLabel)
+      const captionLabel = buildLabel(analysis, counter[mark], false)
+      lines[n] = lines[n].replace(analysis.matchedText, () => captionLabel)
       if (mark === 'img' && shouldSetAlt) {
-        const altLabel = buildLabel(labelInfo, counter[mark], true)
-        setImageAltNumber(lines, n, counter[mark], altLabel)
+        const altLabel = buildLabel(analysis, counter[mark], true)
+        setImageAltNumber(lines, n, altLabel, usedImageLineIndexes)
       }
     }
     n++
