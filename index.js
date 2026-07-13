@@ -1,4 +1,4 @@
-import { analyzeCaptionStart, getMarkRegStateForLanguages } from "p7d-markdown-it-p-captions"
+import { analyzeCaptionStart, getMarkRegStateForLanguages } from 'p7d-markdown-it-p-captions'
 
 
 const markRegState = getMarkRegStateForLanguages()
@@ -29,6 +29,10 @@ const defaultOption = Object.freeze({
   setImgAlt: false,
 })
 const defaultActiveMarks = Object.freeze(markOrder.filter((mark) => defaultOption[mark]))
+const preferredAnalysisOptions = Object.freeze(Object.fromEntries(
+  markOrder.map((mark) => [mark, Object.freeze({ markRegState, preferredMark: mark })]),
+))
+const defaultAnalysisOptions = preferredAnalysisOptions.img
 
 const isAsciiAlphaStart = (text) => {
   if (!text) {
@@ -50,14 +54,9 @@ const isBlankLine = (line) => {
   return true
 }
 
-const buildLabel = (analysis, counter, isAlt) => {
-  let label = analysis.labelText + (isAsciiAlphaStart(analysis.labelText) ? ' ' : '') + counter
-  if (!isAlt && analysis.joint) {
-    label += analysis.joint
-  }
-  return label
+const buildNumberedLabel = (analysis, counter) => {
+  return analysis.labelText + (isAsciiAlphaStart(analysis.labelText) ? ' ' : '') + counter
 }
-
 
 const parseImageLine = (line) => {
   let i = 0
@@ -236,11 +235,8 @@ const joinLinesWithOriginalLineBreaks = (lines, lineBreaks) => {
   return markdown
 }
 
-const selectCaptionAnalysis = (line, activeMarks, activeMarkLookup, labelMarkMap) => {
-  const analysis = analyzeCaptionStart(line, {
-    markRegState,
-    allowedMarks: activeMarks,
-  })
+const selectCaptionAnalysis = (line, analysisOptions, activeMarkLookup, labelMarkMap) => {
+  const analysis = analyzeCaptionStart(line, analysisOptions)
   if (!analysis || !labelMarkMap) {
     return analysis
   }
@@ -250,10 +246,7 @@ const selectCaptionAnalysis = (line, activeMarks, activeMarkLookup, labelMarkMap
     return analysis
   }
 
-  const mappedAnalysis = analyzeCaptionStart(line, {
-    markRegState,
-    preferredMark: mappedMark,
-  })
+  const mappedAnalysis = analyzeCaptionStart(line, preferredAnalysisOptions[mappedMark])
   if (
     mappedAnalysis &&
     mappedAnalysis.labelText === analysis.labelText &&
@@ -266,6 +259,9 @@ const selectCaptionAnalysis = (line, activeMarks, activeMarkLookup, labelMarkMap
 
 const setMarkdownFigureNum = (markdown, option) => {
   if (typeof markdown !== 'string') {
+    return markdown
+  }
+  if (markdown.length === 0) {
     return markdown
   }
 
@@ -282,9 +278,13 @@ const setMarkdownFigureNum = (markdown, option) => {
   if (activeMarks.length === 0) {
     return markdown
   }
+  const analysisOptions = opt === defaultOption
+    ? defaultAnalysisOptions
+    : activeMarks.length === 1
+      ? preferredAnalysisOptions[activeMarks[0]]
+      : { markRegState, allowedMarks: activeMarks }
 
   const lines = markdown.split(lineSplitReg)
-  const lineBreaks = lines.length > 1 ? markdown.match(lineBreakReg) : null
   const counter = Object.create(null)
   for (let i = 0; i < activeMarks.length; i++) {
     counter[activeMarks[i]] = 0
@@ -295,10 +295,11 @@ const setMarkdownFigureNum = (markdown, option) => {
       activeMarkLookup[activeMarks[i]] = true
     }
   }
-  const usedImageLineIndexes = shouldSetAlt ? new Set() : null
+  const usedImageLineIndexes = shouldSetAlt && opt.img ? new Set() : null
 
   let codeFenceOpen = null
   let mathFenceLength = 0
+  let changed = false
 
   let n = 0
   while (n < lines.length) {
@@ -330,19 +331,24 @@ const setMarkdownFigureNum = (markdown, option) => {
       continue
     }
 
-    const analysis = selectCaptionAnalysis(lines[n], activeMarks, activeMarkLookup, labelMarkMap)
+    const analysis = selectCaptionAnalysis(lines[n], analysisOptions, activeMarkLookup, labelMarkMap)
     if (analysis) {
       const mark = analysis.mark
       counter[mark]++
-      const captionLabel = buildLabel(analysis, counter[mark], false)
-      lines[n] = lines[n].replace(analysis.matchedText, () => captionLabel)
+      const numberedLabel = buildNumberedLabel(analysis, counter[mark])
+      const captionLabel = analysis.joint ? numberedLabel + analysis.joint : numberedLabel
+      lines[n] = captionLabel + lines[n].slice(analysis.matchedText.length)
+      changed = true
       if (mark === 'img' && shouldSetAlt) {
-        const altLabel = buildLabel(analysis, counter[mark], true)
-        setImageAltNumber(lines, n, altLabel, usedImageLineIndexes)
+        setImageAltNumber(lines, n, numberedLabel, usedImageLineIndexes)
       }
     }
     n++
   }
+  if (!changed) {
+    return markdown
+  }
+  const lineBreaks = lines.length > 1 ? markdown.match(lineBreakReg) : null
   return joinLinesWithOriginalLineBreaks(lines, lineBreaks)
 }
 

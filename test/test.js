@@ -103,4 +103,8 @@ assert.strictEqual(
   '図1 キャプション',
 )
 
-if (pass) console.log('\nAll tests passed.')
+if (pass) {
+  console.log('\nAll tests passed.')
+} else {
+  process.exitCode = 1
+}
