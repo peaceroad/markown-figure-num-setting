@@ -106,10 +106,10 @@ test('every production import is a direct dependency', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
   for (const dependency of [
     '@peaceroad/markdown-it-figure-with-p-caption',
+    'js-yaml',
     'markdown-it',
     'markdown-it-front-matter',
     'p7d-markdown-it-p-captions',
-    'yaml',
   ]) {
     assert.equal(typeof pkg.dependencies[dependency], 'string')
   }

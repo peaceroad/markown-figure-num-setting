@@ -29,9 +29,9 @@
   "homepage": "https://github.com/peaceroad/markown-figure-num-setting#readme",
   "dependencies": {
     "@peaceroad/markdown-it-figure-with-p-caption": "^0.20.0",
+    "js-yaml": "^5.2.2",
     "markdown-it": "^14.3.0",
     "markdown-it-front-matter": "^0.2.4",
-    "p7d-markdown-it-p-captions": "^0.25.0",
-    "yaml": "^2.9.0"
+    "p7d-markdown-it-p-captions": "^0.25.0"
   }
 }

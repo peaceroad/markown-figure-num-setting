@@ -170,7 +170,7 @@ be integers from 1 through 6. Repeated semantic scopes may `continue` or
 ### Frontmatter
 
 Document-leading YAML frontmatter is separated with
-`markdown-it-front-matter` and parsed with `yaml` by default.
+`markdown-it-front-matter` and parsed with `js-yaml` by default.
 
 ```yaml
 ---

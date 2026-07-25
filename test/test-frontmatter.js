@@ -15,6 +15,16 @@ test('default YAML parser supplies a frontmatter title to figure scope', () => {
   )
 })
 
+test('empty and comment-only YAML frontmatter parse as empty objects', () => {
+  for (const metadata of ['', '# comment only']) {
+    const source = `---\n${metadata}\n---\nFigure. Caption`
+    assert.equal(
+      transform(source),
+      source.replace('Figure. Caption', 'Figure 1. Caption'),
+    )
+  }
+})
+
 test('BOM, frontmatter bytes, and mixed line endings remain untouched', () => {
   const source = (
     '\uFEFF---\r\n' +
@@ -92,6 +102,17 @@ test('invalid YAML and non-object parser results fail before editing', () => {
   )
   assert.throws(
     () => transform('---\ntitle: one\ntitle: two\n---\nFigure. Caption'),
+  )
+  assert.throws(
+    () => transform([
+      '---',
+      'title: one',
+      '--- # second document',
+      'title: two',
+      '---',
+      'Figure. Caption',
+    ].join('\n')),
+    /must contain a single document/,
   )
   assert.throws(
     () => transform('---\ntitle: "Chapter 1"'),
