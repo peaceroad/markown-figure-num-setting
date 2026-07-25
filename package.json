@@ -1,16 +1,21 @@
 {
   "name": "@peaceroad/markown-figure-num-setting",
-  "version": "0.3.0",
-  "description": "Set figure number for p7d-markdown-it-p-captions.",
+  "version": "0.4.0",
+  "description": "Number p-captions-compatible Markdown captions with figure-scoped semantics.",
   "type": "module",
   "main": "index.js",
+  "exports": "./index.js",
   "files": [
     "index.js",
+    "lib/",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "test": "node test/test.js"
+    "test": "node --test test/test.js",
+    "test:dependency-contract": "node --test test/test-dependency-contract.js",
+    "test:differential": "node --test test/test-differential.js",
+    "benchmark": "node test/performance/benchmark.js"
   },
   "repository": {
     "type": "git",
@@ -23,6 +28,10 @@
   },
   "homepage": "https://github.com/peaceroad/markown-figure-num-setting#readme",
   "dependencies": {
-    "p7d-markdown-it-p-captions": "^0.24.0"
+    "@peaceroad/markdown-it-figure-with-p-caption": "^0.20.0",
+    "markdown-it": "^14.3.0",
+    "markdown-it-front-matter": "^0.2.4",
+    "p7d-markdown-it-p-captions": "^0.25.0",
+    "yaml": "^2.9.0"
   }
 }

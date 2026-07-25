@@ -1,32 +1,92 @@
 # AGENTS Notes
 
 ## Scope
-This memo is for implementing and maintaining `index.js` in this repository.
 
-## `index.js` workflow
-1. Confirm behavior first:
-   - Figure labels are detected via `p7d-markdown-it-p-captions` helper APIs, currently `getMarkRegStateForLanguages()` and `analyzeCaptionStart()`.
-   - Mixed line endings (`\n` / `\r\n`) must be preserved exactly per original line break.
-   - Code/math fence lines (` ``` `, `~~~`, `$$`) must be skipped.
-   - Indented code blocks (4 spaces/tab) are currently out of scope unless explicitly changed.
-2. Make the smallest safe change:
-   - Prefer compatibility-first edits (avoid changing output format unless required).
-   - Remove dead/debug code while editing.
-3. Validate locally:
-   - Run `npm test`.
-   - Run at least one direct Node import/run check for `index.js`.
-4. Compatibility checks:
-   - Keep `index.js` free of Node-only APIs (`fs`, `path`, `process`) so browser/VSCode web usage remains possible.
-   - Watch upstream `p7d-markdown-it-p-captions` export changes (for example helper API migrations).
-   - Do not assume `getMarkRegForLanguages()` returns a plain `RegExp`; matcher objects may expose only `exec()` / `test()`.
-   - Keep this package's default mark priority explicit (`img -> video -> table -> pre-code -> pre-samp -> blockquote -> slide -> audio`) instead of inheriting helper-internal entry order.
-5. Performance checks (when touching hot paths):
-   - Benchmark before/after with a fixed corpus.
-   - Prioritize simple optimizations (fewer regex calls, fewer loops, precomputed constants).
-   - Prefer `analyzeCaptionStart(..., { allowedMarks })` over per-mark repeated analysis when behavior stays the same.
-   - Avoid micro-optimizations that make logic hard to maintain without measurable gain.
+These notes cover the 0.4+ Markdown source editor implementation.
 
-## Test data maintenance
-- Keep active cases in `test/examples.txt`, `test/examples-no-set-alt.txt`, `test/examples-pre-samp.txt`, and `test/examples-label-mark-map.txt`.
-- Remove obsolete standalone test files only after migrating useful scenarios into active test files.
-- Keep the mixed line-ending regression check as an inline assertion in `test/test.js` (not fixture files).
+## Responsibility boundaries
+
+- Use p-captions for label grammar, canonical marks, `analyzeCaptionStart()`,
+  and frozen `analyzeCaptionParagraph()` decisions.
+- Use only
+  `@peaceroad/markdown-it-figure-with-p-caption/caption-numbering.js` for
+  Chapter/Appendix scope, semantic counter keys, and scoped number codecs.
+- Do not import figure renderer walkers, wrapper logic, private candidate
+  detectors, or private caption-numbering modules.
+- Keep Markdown parsing, source offsets, edit validation, frontmatter input,
+  counter planning, and source reconstruction in this package.
+- Declare every package imported by production code as a direct dependency.
+
+## Processing workflow
+
+1. Normalize and validate the source and all options before parsing.
+2. Use the stable markdown-it instance and its one-shot post-inline core
+   collector.
+3. Store invocation-local data in the private `env` entry; never use
+   module-global mutable parse or render state.
+4. Parse document-leading raw frontmatter with a safe parser and place the
+   plain-object result in `state.env.frontmatter` before creating the figure
+   scope timeline.
+5. Select enabled marks in configured order with
+   `analyzeCaptionStart(..., { allowedMarks })`.
+6. Confirm each paragraph with `analyzeCaptionParagraph()` and require the two
+   analyses to agree on mark, label, and matched text.
+7. Collect source-relative candidates without mutating tokens, inline
+   children, decisions, contexts, or user env data.
+8. Plan counters by `counterKey` and branded `sequenceKey`. Preserve explicit
+   numbers and seed only compatible positive decimal sequences with max
+   semantics.
+9. Validate every generated number and edit range, reject duplicates and
+   overlaps, then rebuild the original source once.
+10. Return the original source on a no-op or structurally unsafe mapping.
+
+## Source safety
+
+- Preserve BOM, LF, CRLF, mixed line endings, final newline state,
+  frontmatter, inline markup, attrs, and untouched whitespace.
+- Treat `token.map` as 0-based and end-exclusive.
+- Require the caption label to exist as leading plain source text after a
+  safely recognized container prefix.
+- Fail closed for hidden paragraphs, tight-list guards, invalid maps,
+  ambiguous prefixes, or unmappable scope boundaries.
+- Do not reconstruct Markdown from renderer output.
+- Do not restore the 0.3 nearest-line image-alt heuristic.
+- Keep production modules free of Node-only APIs for browser and VS Code web
+  compatibility.
+
+## Options and API
+
+- Keep the named `setFigureCaptionNumbers` export and the same-function default
+  export.
+- Reject non-string source, legacy options, and unknown properties.
+- Delegate `marks` alias normalization to p-captions.
+- Delegate numbering values and semantics to the figure public normalizer.
+- Keep `marks: []` as the only numbering-disable switch.
+- Require custom frontmatter parsers to be synchronous, pure, and
+  plain-object-returning.
+
+## Tests and performance
+
+- Keep responsibility-focused tests for numbering, source edits, frontmatter,
+  options, dependency contracts, and figure-runtime differentials.
+- Keep every ordinary suite in the default `npm test` aggregate.
+- Keep dependency-contract and differential scripts directly runnable.
+- Keep the mixed CRLF/LF regression as an inline string assertion.
+- Benchmark caption-free input, dense captions, many scopes, shared samp
+  series, mixed line endings, document scope, automatic scope, and disabled
+  marks. Report median and p95.
+- Verify that disabled marks skip parsing, no-op output is not rebuilt, source
+  is reconstructed once, regexes are not compiled per caption, and dependency
+  caches are reused.
+
+## Final validation
+
+- Run `npm test`.
+- Run `npm run test:dependency-contract`.
+- Run `npm run test:differential`.
+- Run `npm run benchmark`.
+- Run a direct ESM import and transform.
+- Run `npm pack --dry-run`.
+- Run `git diff --check`.
+- Confirm the figure repository Git state did not change.
+- Run the required LF checker for every text file changed in the task.
