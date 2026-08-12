@@ -23,7 +23,9 @@ These notes cover the 0.4+ Markdown source editor implementation.
 2. Use the stable markdown-it instance and its one-shot post-inline core
    collector.
 3. Store invocation-local data in the private `env` entry; never use
-   module-global mutable parse or render state.
+   module-global mutable parse or render state. Keep normalized options as the
+   invocation's single source of truth instead of copying immutable analyzer
+   options or resolvers into per-call state.
 4. Parse document-leading raw frontmatter with a safe parser and place the
    plain-object result in `state.env.frontmatter` before creating the figure
    scope timeline.
@@ -71,6 +73,9 @@ These notes cover the 0.4+ Markdown source editor implementation.
   options, dependency contracts, and figure-runtime differentials.
 - Keep every ordinary suite in the default `npm test` aggregate.
 - Keep dependency-contract and differential scripts directly runnable.
+- Keep the markdown-it 15 contract test for the post-inline `StateCore`,
+  stripped reference definitions, and reference-label metadata; keep linkify
+  disabled unless source-mapping behavior is re-audited.
 - Keep the mixed CRLF/LF regression as an inline string assertion.
 - Benchmark caption-free input, dense captions, many scopes, shared samp
   series, mixed line endings, document scope, automatic scope, and disabled

@@ -31,6 +31,20 @@ test('top-level options must be a plain object with known properties', () => {
   )
 })
 
+test('no-op fast paths still normalize and validate options', () => {
+  assert.throws(
+    () => transform('', { typo: true }),
+    /options property "typo" is not supported/,
+  )
+  assert.throws(
+    () => transform('Figure. A', {
+      marks: [],
+      frontmatter: {},
+    }),
+    /options\.frontmatter\.parse must be a synchronous function/,
+  )
+})
+
 test('legacy options fail with migration guidance', () => {
   assert.throws(
     () => transform('Figure. A', { img: true }),
@@ -74,6 +88,24 @@ test('marks: [] skips Markdown parsing when numbering is omitted', () => {
   assert.equal(normalized.analysisOptions, null)
   assert.equal(normalized.paragraphAnalysisOptions, null)
   assert.equal(normalized.resolveCounterKey, null)
+})
+
+test('marks: [] does not invoke a valid custom frontmatter parser', () => {
+  let calls = 0
+  const source = '---\ntitle: x\n---\nFigure. A'
+  assert.equal(
+    transform(source, {
+      marks: [],
+      frontmatter: {
+        parse() {
+          calls++
+          return { title: 'Chapter 2' }
+        },
+      },
+    }),
+    source,
+  )
+  assert.equal(calls, 0)
 })
 
 test('marks: [] still validates explicit numbering', () => {

@@ -2,7 +2,6 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { setFigureCaptionNumbers as transform } from '../index.js'
 import {
-  createLineStartOffsets,
   extendLineStartOffsets,
   rebuildSource,
   validateAndSortEdits,
@@ -64,6 +63,22 @@ test('leaves image alt text unchanged', () => {
   )
 })
 
+test('preserves v15 reference, image-alt, and entity source syntax', () => {
+  const source = [
+    '[caption]: https://example.com',
+    '',
+    'Figure. [Linked caption][caption] &copy text &copy;',
+    '',
+    '![Original `code` alt][image]',
+    '',
+    '[image]: image.png',
+  ].join('\n')
+  assert.equal(
+    transform(source, { numbering: { scope: 'document' } }),
+    source.replace('Figure.', 'Figure 1.'),
+  )
+})
+
 test('fails closed for the guarded first list paragraph', () => {
   const source = '- Figure. List item'
   assert.equal(
@@ -94,8 +109,14 @@ test('no-op documents are returned without content reconstruction', () => {
 })
 
 test('line offset table preserves CRLF, LF, and bare CR coordinates', () => {
+  const offsets = [0]
+  extendLineStartOffsets(
+    'A\r\nB\nC\rD',
+    offsets,
+    Number.POSITIVE_INFINITY,
+  )
   assert.deepEqual(
-    createLineStartOffsets('A\r\nB\nC\rD'),
+    offsets,
     [0, 3, 5, 7],
   )
 })

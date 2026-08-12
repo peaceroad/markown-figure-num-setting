@@ -17,6 +17,26 @@ import {
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
+test('markdown-it 15 exposes the required post-inline parser contract', () => {
+  assert.equal(typeof MarkdownIt.StateCore, 'function')
+  const md = new MarkdownIt({ html: true })
+  assert.equal(md.options.linkify, false)
+
+  let state = null
+  md.core.ruler.after('inline', 'capture_markdown_it_15_state', (value) => {
+    state = value
+  })
+  md.parse('[Caption][ref]\n\n[ref]: https://example.com', {})
+
+  assert.equal(state instanceof MarkdownIt.StateCore, true)
+  assert.equal(
+    state.tokens.some((token) => token.type === 'reference_definition'),
+    false,
+  )
+  const inline = state.tokens.find((token) => token.type === 'inline')
+  assert.equal(inline.children[0].meta.label, 'REF')
+})
+
 test('figure 0.20 public numbering subpath exposes four frozen APIs', () => {
   for (const value of [
     createFigureCaptionCounterKeyResolver,

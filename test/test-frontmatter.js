@@ -162,3 +162,20 @@ test('custom parser receives raw metadata and may provide a title', () => {
   assert.equal(received, 'custom title')
   assert.equal(result, source.replace('Figure. Caption', 'Figure 7.1. Caption'))
 })
+
+test('custom parser is not invoked when the document has no frontmatter', () => {
+  let calls = 0
+  assert.equal(
+    transform('Figure. Caption', {
+      frontmatter: {
+        parse() {
+          calls++
+          return {}
+        },
+      },
+      numbering: { scope: 'document' },
+    }),
+    'Figure 1. Caption',
+  )
+  assert.equal(calls, 0)
+})
