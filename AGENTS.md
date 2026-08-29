@@ -28,7 +28,7 @@ These notes cover the 0.4+ Markdown source editor implementation.
    options or resolvers into per-call state.
 4. Parse document-leading raw frontmatter with a safe parser and place the
    plain-object result in `state.env.frontmatter` before creating the figure
-   scope timeline.
+   scope timeline. Keep the js-yaml schema and alias/depth limits explicit.
 5. Select enabled marks in configured order with
    `analyzeCaptionStart(..., { allowedMarks })`.
 6. Confirm each paragraph with `analyzeCaptionParagraph()` and require the two

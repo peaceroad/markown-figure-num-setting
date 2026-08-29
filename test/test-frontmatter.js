@@ -25,6 +25,45 @@ test('empty and comment-only YAML frontmatter parse as empty objects', () => {
   }
 })
 
+test('default YAML parser uses the YAML 1.2 core schema without merge keys', () => {
+  const source = [
+    '---',
+    'defaults: &defaults',
+    '  title: "Chapter 9"',
+    '<<: *defaults',
+    '---',
+    'Figure. Caption',
+  ].join('\n')
+  assert.equal(
+    transform(source),
+    source.replace('Figure. Caption', 'Figure 1. Caption'),
+  )
+})
+
+test('default YAML parser bounds aliases and collection depth', () => {
+  const aliases = [
+    'base: &base { value: 1 }',
+    'aliases:',
+    ...Array.from({ length: 101 }, () => '  - *base'),
+  ].join('\n')
+  assert.throws(
+    () => transform(`---\n${aliases}\n---\nFigure. Caption`),
+    /maxAliases \(100\)/,
+  )
+
+  const nested = [
+    ...Array.from(
+      { length: 101 },
+      (_, index) => `${' '.repeat(index)}level${index}:`,
+    ),
+    `${' '.repeat(101)}value`,
+  ].join('\n')
+  assert.throws(
+    () => transform(`---\n${nested}\n---\nFigure. Caption`),
+    /maxDepth \(100\)/,
+  )
+})
+
 test('BOM, frontmatter bytes, and mixed line endings remain untouched', () => {
   const source = (
     '\uFEFF---\r\n' +

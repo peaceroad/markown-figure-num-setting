@@ -11,6 +11,7 @@ import {
   normalizeFigureCaptionNumberingPolicy,
 } from '@peaceroad/markdown-it-figure-with-p-caption/caption-numbering.js'
 import {
+  analyzeCaptionParagraph,
   analyzeCaptionStart,
   getMarkRegStateForLanguages,
 } from 'p7d-markdown-it-p-captions'
@@ -37,7 +38,7 @@ test('markdown-it 15 exposes the required post-inline parser contract', () => {
   assert.equal(inline.children[0].meta.label, 'REF')
 })
 
-test('figure 0.20 public numbering subpath exposes four frozen APIs', () => {
+test('figure 0.21 public numbering subpath exposes four frozen APIs', () => {
   for (const value of [
     createFigureCaptionCounterKeyResolver,
     createFigureCaptionNumberCodec,
@@ -52,6 +53,31 @@ test('figure 0.20 public numbering subpath exposes four frozen APIs', () => {
   assert.equal(Object.isFrozen(policy), true)
   assert.equal(Object.isFrozen(codec), true)
   assert.equal(Object.isFrozen(resolver), true)
+})
+
+test('p-captions 0.26 provides frozen non-mutating paragraph decisions', () => {
+  let state = null
+  const md = new MarkdownIt()
+  md.core.ruler.after('inline', 'capture_p_captions_026_state', (value) => {
+    state = value
+  })
+  md.parse('Figure. First\n\nFigure. Second', {})
+
+  const before = JSON.stringify(state.tokens)
+  const options = Object.freeze({
+    markRegState: getMarkRegStateForLanguages(),
+  })
+  for (const paragraphIndex of [0, 3]) {
+    const decision = analyzeCaptionParagraph(
+      paragraphIndex,
+      state,
+      { captionName: 'img' },
+      options,
+    )
+    assert.equal(Object.isFrozen(decision), true)
+    assert.equal(decision.paragraphIndex, paragraphIndex)
+  }
+  assert.equal(JSON.stringify(state.tokens), before)
 })
 
 test('timeline and codec reject look-alike policy and context objects', () => {
@@ -135,21 +161,19 @@ test('every production import is a direct dependency', () => {
   }
 })
 
-test('installed companion dependency versions match the 0.4 contract', () => {
-  const figurePackage = JSON.parse(fs.readFileSync(
-    path.join(
-      root,
-      'node_modules',
-      '@peaceroad',
-      'markdown-it-figure-with-p-caption',
-      'package.json',
-    ),
-    'utf8',
-  ))
-  const captionsPackage = JSON.parse(fs.readFileSync(
-    path.join(root, 'node_modules', 'p7d-markdown-it-p-captions', 'package.json'),
-    'utf8',
-  ))
-  assert.equal(figurePackage.version, '0.20.0')
-  assert.equal(captionsPackage.version, '0.25.0')
+test('installed runtime dependency versions match the audited 0.4 contract', () => {
+  const versions = [
+    ['@peaceroad/markdown-it-figure-with-p-caption', '0.21.0'],
+    ['js-yaml', '5.4.1'],
+    ['markdown-it', '15.0.1'],
+    ['markdown-it-front-matter', '0.2.4'],
+    ['p7d-markdown-it-p-captions', '0.26.0'],
+  ]
+  for (const [packageName, expected] of versions) {
+    const installed = JSON.parse(fs.readFileSync(
+      path.join(root, 'node_modules', ...packageName.split('/'), 'package.json'),
+      'utf8',
+    ))
+    assert.equal(installed.version, expected)
+  }
 })

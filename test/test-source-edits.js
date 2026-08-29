@@ -79,6 +79,26 @@ test('preserves v15 reference, image-alt, and entity source syntax', () => {
   )
 })
 
+test('preserves markdown-it 15.0.1 code-span and IPv6 link source syntax', () => {
+  const source = [
+    'Figure. [foo `bar` baz`',
+    '',
+    'Figure. `   `',
+    '',
+    'Figure. [IPv6](http://[::1]/)',
+  ].join('\n')
+  assert.equal(
+    transform(source, { numbering: { scope: 'document' } }),
+    [
+      'Figure 1. [foo `bar` baz`',
+      '',
+      'Figure 2. `   `',
+      '',
+      'Figure 3. [IPv6](http://[::1]/)',
+    ].join('\n'),
+  )
+})
+
 test('fails closed for the guarded first list paragraph', () => {
   const source = '- Figure. List item'
   assert.equal(
