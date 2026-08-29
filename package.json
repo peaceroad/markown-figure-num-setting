@@ -1,6 +1,6 @@
 {
   "name": "@peaceroad/markown-figure-num-setting",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Number p-captions-compatible Markdown captions with figure-scoped semantics.",
   "type": "module",
   "main": "index.js",
